@@ -1,54 +1,50 @@
 <!DOCTYPE html>
 <html lang="he">
-	<head>
-		<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>Tehillim</title>
-				<link href="https://fonts.googleapis.com/css2?family=Noto+Rashi+Hebrew&display=swap" rel="stylesheet">
-					<link href="https://fonts.googleapis.com/css2?family=Heebo&display=swap" rel="stylesheet">
-						<style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tehillim</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Rashi+Hebrew&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo&display=swap" rel="stylesheet">
+    <style>
         html, body {
             font-family: 'Heebo', sans-serif;
             height: 100%;
             margin: 0;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* נשאיר את התוכן במרכז */
+            justify-content: center;
             align-items: center;
             text-align: center;
             direction: rtl;
             background-color: #21262c;
             color: white;
         }
-
         #content-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
         }
-
         #rashi {
             position: fixed;
-            top: 1%; /* ממקם במרכז האנכי */
-            left: 50%; /* ממקם במרכז האופקי */
-            transform: translate(-50%, -50%); /* מבטיח שהטקסט ממורכז */
-            font-size: 40px; /* גודל פונט גדול אך לא דומיננטי */
+            top: 1%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
             width: 100%;
             font-family: 'Noto Rashi Hebrew';
-            color: rgba(255, 255, 255, 0.05); /* צבע בהיר ושקוף */
-            letter-spacing: 8px; /* ריווח בין האותיות */
+            color: rgba(255, 255, 255, 0.05);
+            letter-spacing: 8px;
             text-align: center;
-            pointer-events: none; /* מונע אינטראקציה עם הטקסט */
-            user-select: none; /* מונע בחירה של הטקסט */
+            pointer-events: none;
+            user-select: none;
         }
-
         #chapter-title {
             color: white;
             font-size: 30px;
-            margin-top: 60px; /* רווח מתחת ל-Rashi */
+            margin-top: 60px;
         }
-
         #psalm-container {
             width: 600px;
             margin: 10px auto;
@@ -62,32 +58,25 @@
             display: none;
             font-size: 20px;
         }
-		
-		#psalm-container p {
-    margin: 5px 0; /* רווח קטן בין הפסוקים */
-    padding: 0; /* לוודא שאין רווח פנימי נוסף */
-}
-
-#psalm-container p span {
-    font-size: 18px; /* גודל פונט קטן יותר */
-    font-weight: bolder; /* מודגש */
-}
-
-
+        #psalm-container p {
+            margin: 5px 0;
+            padding: 0;
+        }
+        #psalm-container p span {
+            font-size: 18px;
+            font-weight: bolder;
+        }
         #psalm-container::-webkit-scrollbar {
             width: 12px;
         }
-
         #psalm-container::-webkit-scrollbar-thumb {
             background-color: #5cbc5a;
             border-radius: 6px;
         }
-
         #psalm-container::-webkit-scrollbar-track {
             background-color: #21262c;
             border-radius: 6px;
         }
-
         #confirm-button {
             margin-top: 10px;
             font-size: 20px;
@@ -99,11 +88,10 @@
             border-radius: 12px;
             display: none;
         }
-
         #fetch-button {
             font-size: 50px;
             padding: 25px 50px;
-			font-weight:bold;
+            font-weight: bold;
             background-color: #5cbc5a;
             color: white;
             border: none;
@@ -111,68 +99,110 @@
             cursor: pointer;
             margin: 20px;
         }
-
-        #loading, #thank-you-message {
+        #loading, #thank-you-message, #completion-message {
             display: none;
             font-size: 18px;
             margin-top: 20px;
         }
+        #completion-message {
+            font-size: 22px;
+            color: #5cbc5a;
+		}
+
+		#first-verse-container p:last-child {
+			font-size: 18px;
+			margin: 0;
+		}
+
+		
     </style>
-					</head>
-					<body>
-						<p id="rashi">"מי ימלל גבורות ה' ישמיע כל תהילתו"</p>
-						<div id="content-wrapper">
-							<button id="fetch-button" onclick="fetchPsalm()">לחץ/י לקבלת פרק תהילים</button>
-							<div id="loading">טוען פרק...</div>
-							<div id="chapter-title"/>
-							<div id="psalm-container"/>
-							<button id="confirm-button" onclick="submitConfirmation()">✓ קראתי את הפרק</button>
-							<div id="thank-you-message">תודה!</div>
-						</div>
-						<script>
+</head>
+<body>
+    <p id="rashi">"מי ימלל גבורות יהוה ישמיע כל תהילתו"</p>
+    <div id="content-wrapper">
+        <button id="fetch-button" onclick="fetchPsalm()">לחץ/י לקבלת פרק תהילים</button>
+        <div id="loading">טוען פרק...</div>
+        <div id="chapter-title"></div>
+		<div id="first-verse-container"></div>
+        <div id="psalm-container"></div>
+        <button id="confirm-button" onclick="submitConfirmation()">✓ קראתי את הפרק</button>
+        <div id="thank-you-message">תודה!</div>
+        <div id="completion-message">כל הפרקים תפוסים...</div>
+    </div>
+
+    <script>
+	
+        let timer;
+        let hasConfirmed = false;
+
         function fetchPsalm() {
-            // הצגת ה-loader
-            document.getElementById("loading").style.display = "block";
+            const loadingElement = document.getElementById("loading");
+            if (loadingElement) {
+                loadingElement.style.display = "block";
+            }
+
             document.getElementById("fetch-button").disabled = true;
 
-            // שליחת בקשה לוובהוק
-            fetch('https://hook.eu2.make.com/sdvtbdnzb9juncp9sowxnxjkxbxfw95w')
-                .then(response => response.text())
-                .then(data => {
+            fetch('https://hook.eu2.make.com/sdvtbdnzb9juncp9sowxnxjkxbxfw95w', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'open',
+                }),
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data.trim() === "כל הפרקים תפוסים...") {
+                    document.getElementById("completion-message").style.display = "block";
+                    document.getElementById("fetch-button").style.display = "none";
+                    document.getElementById("loading").style.display = "none";
+                } else {
                     document.getElementById("loading").style.display = "none";
                     document.getElementById("psalm-container").innerHTML = generatePsalmHTMLFromText(data);
                     document.getElementById("psalm-container").style.display = "block";
 
-                    // אל תעדכן את justifyContent - נשאיר את זה במרכז
-                    document.body.style.paddingBottom = "20px";
-
                     document.getElementById("fetch-button").style.display = "none";
                     document.getElementById("confirm-button").style.display = "inline-block";
-                })
-                .catch(error => {
-                    console.error("Error fetching Psalm:", error);
-                    document.getElementById("loading").style.display = "none";
-                    alert("שגיאה בטעינת הפרק");
-                });
+
+                    startAutoRefreshTimer();
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching Psalm:", error);
+                document.getElementById("loading").style.display = "none";
+                alert("שגיאה בטעינת הפרק");
+            });
         }
 
-        function generatePsalmHTMLFromText(text) {
-            let html = "";
-            const verses = text.split("׃");
-            const chapterNumber = verses[0].split(' ')[1];
-            document.getElementById("chapter-title").innerText = `פרק ${chapterNumber}`;
-            verses.slice(0, -1).forEach((verse, index) => {
-                if (index === 0) {
-                    verse = verse.split(" ").slice(2).join(" ");
-                }
-                verse = verse.replace(/^,/, '').trim();
-                verse = removeCantillation(verse);
-                const gematria = getGematria(index + 1);
-                html += `<p id="psalm">
-								<span>${gematria}</span> ${verse.trim()}׃</p>`;
-            });
-            return html;
-        }
+		function generatePsalmHTMLFromText(text) {
+			let html = "";
+			const verses = text.split("׃").map(verse => verse.trim());
+
+			const firstVerse = verses.shift();
+			const firstVerseElement = document.getElementById("first-verse-container");
+			if (firstVerseElement) {
+				firstVerseElement.innerHTML = `
+					<p><span>פרק זה לרפואת:</span> ${firstVerse}</p>
+				`;
+			}
+
+			const chapterNumber = verses[0].split(' ')[1];
+			document.getElementById("chapter-title").innerText = `פרק ${chapterNumber}`;
+
+			verses.slice(0, -1).forEach((verse, index) => {
+				if (index === 0) {
+					verse = verse.split(" ").slice(2).join(" ");
+				}
+				verse = verse.replace(/^,/, '').trim();
+				verse = removeCantillation(verse);
+				const gematria = getGematria(index + 1);
+				html += `<p id="psalm"><span>${gematria}</span> ${verse}׃</p>`;
+			});
+
+			return html;
+		}
 
         function removeCantillation(text) {
             return text.replace(/[\u0591-\u05AF](?![\u05B0-\u05C7])/g, '').trim();
@@ -197,12 +227,18 @@
         }
 
         function submitConfirmation() {
-            fetch('https://hook.eu2.make.com/6qeshwpu7pi9svfqyecrlsxmm3foaf49', {
+            const chapterTitle = document.getElementById("chapter-title").innerText;
+            hasConfirmed = true;
+
+            fetch('https://hook.eu2.make.com/sdvtbdnzb9juncp9sowxnxjkxbxfw95w', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ confirmation: 'completed' }),
+                body: JSON.stringify({
+                    status: 'done',
+                    chapter: chapterTitle
+                }),
             })
             .then(() => {
                 document.getElementById("thank-you-message").style.display = "block";
@@ -215,6 +251,41 @@
                 console.error("Error submitting confirmation:", error);
             });
         }
+
+		function startAutoRefreshTimer() {
+			console.log("Timer started for 20 minutes.");
+			timer = setTimeout(() => {
+				if (!hasConfirmed) {
+					console.log("20 minutes passed without confirmation.");
+					const chapterTitle = document.getElementById("chapter-title").innerText;
+
+					fetch('https://hook.eu2.make.com/sdvtbdnzb9juncp9sowxnxjkxbxfw95w', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							status: 'close',
+							chapter: chapterTitle,
+						}),
+					})
+					.then(response => response.text())
+					.then(data => {
+						console.log("Close status sent successfully. Response:", data);
+						// רענון הדף לאחר 2 שניות
+						setTimeout(() => {
+							console.log("Refreshing page after 2 seconds.");
+							location.reload();
+						}, 2000);
+					})
+					.catch(error => {
+						console.error("Error sending close status:", error);
+					});
+				}
+			}, 1200000); // 20 דקות
+		}
+
+
     </script>
-					</body>
-				</html>
+</body>
+</html>
